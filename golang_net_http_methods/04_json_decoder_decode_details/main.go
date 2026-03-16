@@ -1,0 +1,66 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
+)
+
+func writeJson(w http.ResponseWriter, status int, data any) {
+	w.Header().Set("Content-type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(data)
+
+}
+
+type TestRequest struct {
+	Name string `json:"name"`
+}
+
+func testHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJson(w, http.StatusMethodNotAllowed, map[string]any{
+			"ok":    false,
+			"error": "only post is allowed",
+		})
+		return
+	}
+
+	defer r.Body.Close()
+	var req TestRequest
+
+	dec := json.NewDecoder(r.Body)
+
+	if err := dec.Decode(&req); err != nil {
+		writeJson(w, http.StatusBadRequest, map[string]any{
+			"ok":    false,
+			"error": "Invalid json format",
+		})
+		return
+	}
+
+	req.Name = strings.TrimSpace(req.Name)
+
+	if req.Name == "" {
+		writeJson(w, http.StatusBadRequest, map[string]any{
+			"ok":    false,
+			"error": "Name is not empty",
+		})
+		return
+	}
+
+	writeJson(w, http.StatusOK, map[string]any{
+		"ok":        true,
+		"data":      req,
+		"timeStamp": time.Now().UTC(),
+	})
+
+}
+func main() {
+
+	http.HandleFunc("/test", testHandler)
+	err := http.ListenAndServe(":5000", nil)
+	fmt.Println(err)
+}
