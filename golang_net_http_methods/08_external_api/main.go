@@ -10,7 +10,7 @@ import (
 
 type CatFaceResponse struct {
 	Fact   string `json:"fact"`
-	Length string `json:"length"`
+	Length int    `json:"length"`
 }
 
 func writeJson(w http.ResponseWriter, status int, data any) {
